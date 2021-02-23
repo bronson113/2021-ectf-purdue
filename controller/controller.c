@@ -15,7 +15,6 @@
 // this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
 #ifdef EXAMPLE_AES
 #include "aes.h"
-
 char int2char(uint8_t i) {
   char *hex = "0123456789abcdef";
   return hex[i & 0xf];
@@ -28,6 +27,8 @@ char int2char(uint8_t i) {
 // message buffer
 char buf[SCEWL_MAX_DATA_SZ];
 
+// key buger
+uint8_t key[16];
 
 int read_msg(intf_t *intf, char *data, scewl_id_t *src_id, scewl_id_t *tgt_id,
              size_t n, int blocking) {
@@ -161,16 +162,19 @@ int sss_register() {
   // fill registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
+  //msg.register_number = 0xdeadbeefcafebabe;
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(msg), (char *)&msg);
   if (status == SCEWL_ERR) {
     return 0;
   }
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
 
   // receive response
   len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_t), 1);
 
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, len, (char *)&msg);
   // notify CPU of response
   status = send_msg(CPU_INTF, src_id, tgt_id, len, (char *)&msg);
   if (status == SCEWL_ERR) {
@@ -223,8 +227,13 @@ int main() {
 #ifdef EXAMPLE_AES
   // example encryption using tiny-AES-c
   struct AES_ctx ctx;
-  uint8_t key[16] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
   uint8_t plaintext[16] = "0123456789abcdef";
+
+  for(int i=0;i<16;i++)key[i]=i;
+
+
+  send_str("Key extracted:");
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, BLOCK_SIZE, (char *)key);
 
   // initialize context
   AES_init_ctx(&ctx, key);

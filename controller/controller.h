@@ -46,6 +46,7 @@ typedef struct scewl_hdr_t {
 typedef struct scewl_sss_msg_t {
   scewl_id_t dev_id;
   uint16_t   op;
+//  uint64_t   register_number;
 } scewl_sss_msg_t;
 
 // SCEWL status codes

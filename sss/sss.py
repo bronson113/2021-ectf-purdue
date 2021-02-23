@@ -25,7 +25,7 @@ SSS_ID = 1
 # mirroring scewl enum at scewl.c:4
 ALREADY, REG, DEREG = -1, 0, 1
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 Device = NamedTuple('Device', [('id', int), ('status', int), ('csock', socket.socket)])
 
