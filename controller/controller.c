@@ -157,7 +157,7 @@ int sss_register() {
   // fill registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
-  msg.register_number = 0xdeadbeefcafebabe;
+  msg.register_number = 0xdeadbeef;
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(msg), (char *)&msg);
@@ -170,7 +170,7 @@ int sss_register() {
   len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_t), 1);
 
   for(int i=0;i<16;i++){
-	  key[i]=*(&(msg.register_number)+i);
+	  key[i]=msg.key[i];
   } 
 
   send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, len, (char *)&msg);
@@ -179,7 +179,7 @@ int sss_register() {
   cpu_msg.dev_id = msg.dev_id;
   cpu_msg.op = msg.op;
 
-  status = send_msg(CPU_INTF, src_id, tgt_id, len, (char *)&msg);
+  status = send_msg(CPU_INTF, src_id, tgt_id, sizeof(scewl_sss_msg_t), (char *)&msg);
   if (status == SCEWL_ERR) {
     return 0;
   }
