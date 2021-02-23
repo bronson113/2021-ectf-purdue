@@ -15,6 +15,7 @@ import select
 import struct
 import argparse
 import logging
+import sys
 import os
 from typing import NamedTuple
 
@@ -52,17 +53,18 @@ class SSS:
     def handle_transaction(self, csock: socket.SocketType):
         logging.debug('handling transaction')
         data = b''
-        while len(data) < 12:
-            recvd = csock.recv(12 - len(data))
+        while len(data) < 32:
+            recvd = csock.recv(32 - len(data))
             data += recvd
 
             # check for closed connection
             if not recvd:
                 raise ConnectionResetError
         logging.debug(f'Received buffer: {repr(data)}')
-        _, _, _, _, dev_id, op, register_number = struct.unpack('<HHHHHHL', data)
+#        _, _, _, _, dev_id, op = struct.unpack('<HHHHHH', data)
+        _, _, _, _, dev_id, op, reg_num, _ = struct.unpack('<HHHHHHL16s', data)
 
-#        if register_number != 0xdeadbeef:
+#        if reg_num != 0xdeadbeef:
 #            logging.info(f'{dev_id}:invaild sed')
 #            return
 
@@ -76,10 +78,11 @@ class SSS:
             resp_op = op
             logging.info(f'{dev_id}:{"Registered" if op == REG else "Deregistered"}')
 
-        key = 0xaabbccdddeadbeef
-        key2= 0x1122aabb88229933
+        k = "aabbccdddeadbeef1122aabb88229933"
+        key = b''.join([chr(int(k[i:i+2],16)).encode('latin_1') for i in range(0,len(k),2)])
         # send response
-        resp = struct.pack('<2sHHHHhLQQ', b'SC', dev_id, SSS_ID, 4+16, dev_id, resp_op, 0, key, key2)
+#        resp = struct.pack('<2sHHHHh', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op)
+        resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, key)
         logging.debug(f'Sending response {repr(data)}')
         csock.send(resp)
 

@@ -159,27 +159,28 @@ int sss_register() {
   msg.op = SCEWL_SSS_REG;
   msg.register_number = 0xdeadbeef;
   
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
   // send registration
-  status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(msg), (char *)&msg);
+  status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);
   if (status == SCEWL_ERR) {
     return 0;
   }
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
 
   // receive response
-  len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_t), 1);
+  len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_full), 1);
 
   for(int i=0;i<16;i++){
-	  key[i]=msg.key[i];
+	  key[i]=*((char *)&msg.key1+i);
   } 
 
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, len, (char *)&msg);
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(key), (char *)&key);
   // notify CPU of response
   scewl_sss_msg_t cpu_msg;
   cpu_msg.dev_id = msg.dev_id;
   cpu_msg.op = msg.op;
 
-  status = send_msg(CPU_INTF, src_id, tgt_id, sizeof(scewl_sss_msg_t), (char *)&msg);
+  status = send_msg(CPU_INTF, src_id, tgt_id, sizeof(cpu_msg), (char *)&cpu_msg);
   if (status == SCEWL_ERR) {
     return 0;
   }

@@ -52,7 +52,10 @@ typedef struct scewl_sss_msg_full{
   scewl_id_t dev_id;
   uint16_t   op;
   uint32_t   register_number;
-  char       key[16];
+  uint32_t   key1;
+  uint32_t   key2;
+  uint32_t   key3;
+  uint32_t   key4;
 } scewl_sss_msg_full;
 
 // SCEWL status codes
