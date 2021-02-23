@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define SCEWL_MAX_DATA_SZ 0x3fff
+#define SCEWL_MAX_DATA_SZ 0x4000
 
 // type of a SCEWL ID
 typedef uint16_t scewl_id_t;
@@ -46,6 +46,7 @@ typedef struct scewl_hdr_t {
 typedef struct scewl_sss_msg_t {
   scewl_id_t dev_id;
   uint16_t   op;
+//  uint64_t   register_number;
 } scewl_sss_msg_t;
 
 // SCEWL status codes
