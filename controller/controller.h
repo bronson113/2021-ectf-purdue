@@ -46,8 +46,14 @@ typedef struct scewl_hdr_t {
 typedef struct scewl_sss_msg_t {
   scewl_id_t dev_id;
   uint16_t   op;
-//  uint64_t   register_number;
 } scewl_sss_msg_t;
+
+typedef struct scewl_sss_msg_full{
+  scewl_id_t dev_id;
+  uint16_t   op;
+  uint64_t   register_number;
+  char       key[8];
+} scewl_sss_msg_full;
 
 // SCEWL status codes
 enum scewl_status { SCEWL_ERR = -1, SCEWL_OK, SCEWL_ALREADY, SCEWL_NO_MSG };

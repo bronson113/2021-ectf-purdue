@@ -60,7 +60,11 @@ class SSS:
             if not recvd:
                 raise ConnectionResetError
         logging.debug(f'Received buffer: {repr(data)}')
-        _, _, _, _, dev_id, op = struct.unpack('<HHHHHH', data)
+        _, _, _, _, dev_id, op = struct.unpack('<HHHHHHQ', data)
+
+        if register_number != 0xdeadbeefcafebabe:
+            logging.info(f'{dev_id}:invaild sed')
+            return
 
         # requesting repeat transaction
         if dev_id in self.devs and self.devs[dev_id] == op:
@@ -72,8 +76,10 @@ class SSS:
             resp_op = op
             logging.info(f'{dev_id}:{"Registered" if op == REG else "Deregistered"}')
 
+        key = 0xaabbccdddeadbeef
+        key2= 0x1122aabb88229933
         # send response
-        resp = struct.pack('<2sHHHHh', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op)
+        resp = struct.pack('<2sHHHHhQQ', b'SC', dev_id, SSS_ID, 4+16, dev_id, resp_op, key, key2)
         logging.debug(f'Sending response {repr(data)}')
         csock.send(resp)
 

@@ -27,7 +27,7 @@ char int2char(uint8_t i) {
 // message buffer
 char buf[SCEWL_MAX_DATA_SZ];
 
-// key buger
+// key buffer
 uint8_t key[16];
 
 int read_msg(intf_t *intf, char *data, scewl_id_t *src_id, scewl_id_t *tgt_id,
@@ -150,14 +150,14 @@ int handle_registration(char* msg) {
 
 
 int sss_register() {
-  scewl_sss_msg_t msg;
+  scewl_sss_msg_full msg;
   scewl_id_t src_id, tgt_id;
   int status, len;
 
   // fill registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
-  //msg.register_number = 0xdeadbeefcafebabe;
+  msg.register_number = 0xdeadbeefcafebabe;
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(msg), (char *)&msg);
@@ -169,8 +169,16 @@ int sss_register() {
   // receive response
   len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_t), 1);
 
+  for(int i=0;i<16;i++){
+	  key[i]=*(&(msg.register_number)+i);
+  } 
+
   send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, len, (char *)&msg);
   // notify CPU of response
+  scewl_sss_msg_t cpu_msg;
+  cpu_msg.dev_id = msg.dev_id;
+  cpu_msg.op = msg.op;
+
   status = send_msg(CPU_INTF, src_id, tgt_id, len, (char *)&msg);
   if (status == SCEWL_ERR) {
     return 0;
