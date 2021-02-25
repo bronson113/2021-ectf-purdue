@@ -53,8 +53,9 @@ class SSS:
     def handle_transaction(self, csock: socket.SocketType):
         logging.debug('handling transaction')
         data = b''
-        while len(data) < 32:
-            recvd = csock.recv(32 - len(data))
+        reg_packet_len = 32 #need to match controller.c/.h 's definition
+        while len(data) < reg_packet_len:
+            recvd = csock.recv(reg_packet_len - len(data))
             data += recvd
 
             # check for closed connection
@@ -63,6 +64,9 @@ class SSS:
         logging.debug(f'Received buffer: {repr(data)}')
 #        _, _, _, _, dev_id, op = struct.unpack('<HHHHHH', data)
         _, _, _, _, dev_id, op, reg_num, _ = struct.unpack('<HHHHHHL16s', data)
+
+#TODO: check reg_num, need to make a list of vaild reg_num when making a deployment
+#      then check if the given number is within the allowed list
 
 #        if reg_num != 0xdeadbeef:
 #            logging.info(f'{dev_id}:invaild sed')
@@ -77,6 +81,8 @@ class SSS:
             self.devs[dev_id] = Device(dev_id, op, csock)
             resp_op = op
             logging.info(f'{dev_id}:{"Registered" if op == REG else "Deregistered"}')
+
+#TODO: read key from file and "randomise"?
 
         k = "aabbccdddeadbeef1122aabb88229933"
         key = b''.join([chr(int(k[i:i+2],16)).encode('latin_1') for i in range(0,len(k),2)])
