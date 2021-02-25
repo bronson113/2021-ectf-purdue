@@ -15,6 +15,7 @@ import select
 import struct
 import argparse
 import logging
+import random
 import sys
 import os
 from typing import NamedTuple
@@ -68,9 +69,9 @@ class SSS:
 #TODO: check reg_num, need to make a list of vaild reg_num when making a deployment
 #      then check if the given number is within the allowed list
 
-#        if reg_num != 0xdeadbeef:
-#            logging.info(f'{dev_id}:invaild sed')
-#            return
+        if reg_num != 0xdeadbeef:
+            logging.info(f'{dev_id}:invaild sed')
+            return
 
         # requesting repeat transaction
         if dev_id in self.devs and self.devs[dev_id] == op:
@@ -84,7 +85,11 @@ class SSS:
 
 #TODO: read key from file and "randomise"?
 
-        k = "aabbccdddeadbeef1122aabb88229933"
+#        key = open('/enc_key').readline()[:16]
+#        random.seed(k)
+#        k = random.randint(1<<112,1<<128)
+#        k = hex(k)[2:].rjust(32,'0')
+        k = "10293809182309987234982734988012830939128390"[:32]
         key = b''.join([chr(int(k[i:i+2],16)).encode('latin_1') for i in range(0,len(k),2)])
         # send response
 #        resp = struct.pack('<2sHHHHh', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op)

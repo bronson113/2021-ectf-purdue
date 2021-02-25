@@ -13,8 +13,9 @@
 #include "controller.h"
 
 // this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
-#ifdef EXAMPLE_AES
 #include "aes.h"
+
+#ifdef EXAMPLE_AES
 char int2char(uint8_t i) {
   char *hex = "0123456789abcdef";
   return hex[i & 0xf];
@@ -26,6 +27,7 @@ char int2char(uint8_t i) {
 
 // message buffer
 char buf[SCEWL_MAX_DATA_SZ];
+struct AES_ctx ctx;
 
 // key buffer
 uint8_t key[16];
@@ -106,22 +108,34 @@ int send_msg(intf_t *intf, scewl_id_t src_id, scewl_id_t tgt_id, uint16_t len, c
 
 
 int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
+  for(int i=0;i<len;i+=16){
+    AES_ECB_decrypt(&ctx, data+i);		
+  }
   return send_msg(CPU_INTF, src_id, SCEWL_ID, len, data);
 }
 
 
 int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) {
-  return send_msg(RAD_INTF, SCEWL_ID, tgt_id, len, data);
+  for(int i=0;i<len;i+=16){
+    AES_ECB_encrypt(&ctx, data+i);		
+  }
+  return send_msg(RAD_INTF, SCEWL_ID, tgt_id, (len+15)-((len+15)%16), data);
 }
 
 
 int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
+  for(int i=0;i<len;i+=16){
+    AES_ECB_decrypt(&ctx, data+i);		
+  }
   return send_msg(CPU_INTF, src_id, SCEWL_BRDCST_ID, len, data);
 }
 
 
 int handle_brdcst_send(char *data, uint16_t len) {
-  return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, len, data);
+  for(int i=0;i<len;i+=16){
+    AES_ECB_encrypt(&ctx, data+i);		
+  }
+  return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, (len+15)-((len+15)%16), data);
 }   
 
 
@@ -159,7 +173,6 @@ int sss_register() {
   msg.op = SCEWL_SSS_REG;
   msg.register_number = 0xdeadbeef;
   
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);
   if (status == SCEWL_ERR) {
@@ -173,8 +186,8 @@ int sss_register() {
 	  key[i]=*((char *)&msg.key1+i);
   } 
 
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(msg), (char *)&msg);
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, sizeof(key), (char *)&key);
+  AES_init_ctx(&ctx, key);
+
   // notify CPU of response
   scewl_sss_msg_t cpu_msg;
   cpu_msg.dev_id = msg.dev_id;
@@ -231,26 +244,27 @@ int main() {
 #ifdef EXAMPLE_AES
   // example encryption using tiny-AES-c
   struct AES_ctx ctx;
-  uint8_t plaintext[16] = "0123456789abcdef";
+  uint8_t plaintext[48] = "0123456789abcdefhellofromtheaesexample";
 
   for(int i=0;i<16;i++)key[i]=i;
 
-
-  send_str("Key extracted:");
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, BLOCK_SIZE, (char *)key);
 
   // initialize context
   AES_init_ctx(&ctx, key);
 
   // encrypt buffer (encryption happens in place)
   AES_ECB_encrypt(&ctx, plaintext);
+  AES_ECB_encrypt(&ctx, plaintext+16);
+  AES_ECB_encrypt(&ctx, plaintext+32);
   send_str("Example encrypted message:");
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, BLOCK_SIZE, (char *)plaintext);
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 48, (char *)plaintext);
 
   // decrypt buffer (decryption happens in place)
   AES_ECB_decrypt(&ctx, plaintext);
+  AES_ECB_decrypt(&ctx, plaintext+16);
+  AES_ECB_decrypt(&ctx, plaintext+32);
   send_str("Example decrypted message:");
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, BLOCK_SIZE, (char *)plaintext);
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 48, (char *)plaintext);
   // end example
 #endif
 
