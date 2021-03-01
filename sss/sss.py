@@ -85,12 +85,12 @@ class SSS:
 
 #TODO: read key from file and "randomise"?
 
-#        key = open('/enc_key').readline()[:16]
+        key = open('/enc_key').readline()[:16]
 #        random.seed(k)
 #        k = random.randint(1<<112,1<<128)
 #        k = hex(k)[2:].rjust(32,'0')
-        k = "10293809182309987234982734988012830939128390"[:32]
-        key = b''.join([chr(int(k[i:i+2],16)).encode('latin_1') for i in range(0,len(k),2)])
+#        k = "10293809182309987234982734988012830939128390"[:32]
+#        key = b''.join([chr(int(k[i:i+2],16)).encode('latin_1') for i in range(0,len(k),2)])
         # send response
 #        resp = struct.pack('<2sHHHHh', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op)
         resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, key)

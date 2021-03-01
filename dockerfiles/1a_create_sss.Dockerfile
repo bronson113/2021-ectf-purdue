@@ -13,6 +13,8 @@ RUN apt-get update && apt-get upgrade -y && \
 
 # add any deployment-wide secrets here
 RUN mkdir /secrets
+RUN head /dev/urandom > /secrets/random_seed
+ADD create_secret.py /secrets/create_secret.py
 
 # map in SSS
 # NOTE: only sss/ and its subdirectories in the repo are accessible to this Dockerfile as .
