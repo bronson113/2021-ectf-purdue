@@ -115,7 +115,9 @@ int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
 }
 
 
-int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) {
+int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) { 
+  send_str("encryption key used:");
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 16, (char *)key);
   for(int i=0;i<len;i+=16){
     AES_ECB_encrypt(&ctx, data+i);		
   }
