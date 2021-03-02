@@ -46,8 +46,8 @@ class SSS:
         self.sock.bind(sockf)
         self.sock.listen(10)
         self.devs = {}
-        self.start_id = start_id
-        self.end_id = end_id
+        self.start_id = int(start_id)
+        self.end_id = int(end_id)
     
     @staticmethod
     def sock_ready(sock, op='r'):
@@ -77,12 +77,12 @@ class SSS:
             logging.info(f'{dev_id}:invaild sed')
             valid = False
 
-        if dev_id < self.start_id or dev_id >= self.end_id:
+        elif int(dev_id) < self.start_id or int(dev_id) >= self.end_id:
             logging.info(f'{dev_id}:invaild sed')
             valid = False
 
         # requesting repeat transaction
-        if dev_id in self.devs and self.devs[dev_id] == op:
+        elif dev_id in self.devs and self.devs[dev_id] == op:
             resp_op = ALREADY
             logging.info(f'{dev_id}:already {"Registered" if op == REG else "Deregistered"}')
         # record transaction
