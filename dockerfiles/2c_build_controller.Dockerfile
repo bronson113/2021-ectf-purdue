@@ -10,7 +10,7 @@ ARG DEPLOYMENT
 # if you want to copy files from the sss container,               #
 # first create an intermediate stage:                             #
 #                                                                 #
-# FROM ${DEPLOYMENT}:sss as sss                                   #
+FROM ${DEPLOYMENT}/sss:latest as sss
 #                                                                 #
 # Then see box below                                              #
 ###################################################################
@@ -21,11 +21,12 @@ FROM ${DEPLOYMENT}/controller:base
 # map in controller to /sed
 # NOTE: only cpu/ and its subdirectories in the repo are accessible to this Dockerfile as .
 ADD . /sed
+ARG SCEWL_ID
 
 ###################################################################
 # Copy files from the SSS container                               #
 #                                                                 #
-# COPY --from=sss /secrets/${SCEWL_ID}.secret /sed/sed.secret     #
+COPY --from=sss /secrets/${SCEWL_ID}.secret /sed/secret.h     
 #                                                                 #
 ###################################################################
 # IT IS NOT RECOMMENDED TO KEEP DEPLOYMENT-WIDE SECRETS IN THE    #

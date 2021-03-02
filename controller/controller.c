@@ -11,6 +11,7 @@
  */
 
 #include "controller.h"
+#include "secret.h"
 
 // this will run if EXAMPLE_AES is defined in the Makefile (see line 54)
 #include "aes.h"
@@ -174,6 +175,7 @@ int sss_register() {
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
   msg.register_number = 0xdeadbeef;
+//  msg.register_number = REG_NUM;
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);

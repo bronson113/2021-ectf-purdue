@@ -34,7 +34,7 @@ Device = NamedTuple('Device', [('id', int), ('status', int), ('csock', socket.so
 KEY = os.urandom(16)
 
 class SSS:
-    def __init__(self, sockf):
+    def __init__(self, sockf, start_id, end_id):
         # Make sure the socket does not already exist
         try:
             os.unlink(sockf)
@@ -46,6 +46,8 @@ class SSS:
         self.sock.bind(sockf)
         self.sock.listen(10)
         self.devs = {}
+        self.start_id = start_id
+        self.end_id = end_id
     
     @staticmethod
     def sock_ready(sock, op='r'):
@@ -70,9 +72,14 @@ class SSS:
 #TODO: check reg_num, need to make a list of vaild reg_num when making a deployment
 #      then check if the given number is within the allowed list
 
+        valid = True
         if reg_num != 0xdeadbeef:
             logging.info(f'{dev_id}:invaild sed')
-            return
+            valid = False
+
+        if dev_id < self.start_id or dev_id >= self.end_id:
+            logging.info(f'{dev_id}:invaild sed')
+            valid = False
 
         # requesting repeat transaction
         if dev_id in self.devs and self.devs[dev_id] == op:
@@ -85,8 +92,11 @@ class SSS:
             logging.info(f'{dev_id}:{"Registered" if op == REG else "Deregistered"}')
 
         # send response
-#        resp = struct.pack('<2sHHHHh', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op)
-        resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, KEY)
+        if valid:
+            resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, KEY)
+        else:
+            resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op, 0, b'a'*16)
+
         logging.debug(f'Sending response {repr(data)}')
         csock.send(resp)
 
@@ -133,13 +143,16 @@ class SSS:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('sockf', help='Path to socket to bind the SSS to')
+    parser.add_argument('start_id', help='The start of the SCEWL_ID range')
+    parser.add_argument('end_id', help='The end of the SCEWL_ID range')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     # map of SCEWL IDs to statuses
-    sss = SSS(args.sockf)
+    sss = SSS(args.sockf, args.start_id, args.end_id)
+
     sss.start()
 
 
