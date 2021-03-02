@@ -14,6 +14,7 @@ RUN apt-get update && apt-get upgrade -y && \
 # add any deployment-wide secrets here
 RUN mkdir /secrets
 ADD create_secrets.py /secrets/create_secrets.py
+ADD remove_secrets.py /secrets/remove_secrets.py
 
 # map in SSS
 # NOTE: only sss/ and its subdirectories in the repo are accessible to this Dockerfile as .
