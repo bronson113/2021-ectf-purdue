@@ -84,6 +84,7 @@ arg_check:
 
 ${COMPILER}/controller.axf: arg_check
 ${COMPILER}/controller.axf: ${COMPILER}/controller.o
+${COMPILER}/controller.axf: ${COMPILER}/secret.o
 ${COMPILER}/controller.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/controller.axf: ${COMPILER}/system_lm3s.o
 ifeq (${COMPILER}, gcc)

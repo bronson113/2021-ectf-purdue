@@ -3,10 +3,19 @@ import os
 import random
 random.seed(os.urandom(16))
 def create_secrets(scewl_id):
-    with open('{}.secret'.format(scewl_id),'wb') as f:
-            f.write(b'''
-#define REG_NUM 0xdeadbeef
+    reg_num = random.randint(0,0xffffffff)
+    print(reg_num)
+    with open('/secrets/{}.secret'.format(scewl_id),'w') as f:
+            f.write('''
+#include "secret.h"
+unsigned int get_reg_num(){
+    return '''+hex(reg_num)+''';
+}
 ''')
+    with open('/secrets/reg_num_list','a') as f:
+        f.write('|{},{}'.format(scewl_id, reg_num))
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('scewl_id', help='The SCEWL_ID of the device you want to add')

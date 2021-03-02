@@ -73,13 +73,22 @@ class SSS:
 #      then check if the given number is within the allowed list
 
         valid = True
-        if reg_num != 0xdeadbeef:
+        
+        numlist = open('/secrets/reg_num_list','r').read()
+        numlist = [list(map(int,i.split(','))) for i in numlist.split('|')[1:]]
+
+        reg_nums = {}
+        for i in numlist:
+            reg_nums[i[0]] = i[1]
+
+        if int(dev_id) < self.start_id or int(dev_id) >= self.end_id:
             logging.info(f'{dev_id}:invaild sed')
             valid = False
 
-        elif int(dev_id) < self.start_id or int(dev_id) >= self.end_id:
+        elif reg_num != reg_nums.get(dev_id):
             logging.info(f'{dev_id}:invaild sed')
             valid = False
+
 
         # requesting repeat transaction
         elif dev_id in self.devs and self.devs[dev_id] == op:

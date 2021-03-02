@@ -26,7 +26,7 @@ ARG SCEWL_ID
 ###################################################################
 # Copy files from the SSS container                               #
 #                                                                 #
-COPY --from=sss /secrets/${SCEWL_ID}.secret /sed/secret.h     
+COPY --from=sss /secrets/${SCEWL_ID}.secret /sed/secret.c     
 #                                                                 #
 ###################################################################
 # IT IS NOT RECOMMENDED TO KEEP DEPLOYMENT-WIDE SECRETS IN THE    #

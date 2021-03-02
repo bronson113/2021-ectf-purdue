@@ -174,8 +174,9 @@ int sss_register() {
   // fill registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
-  msg.register_number = 0xdeadbeef;
-//  msg.register_number = REG_NUM;
+//  msg.register_number = 0xdeadbeef;
+  msg.register_number = get_reg_num();
+//  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 8, (char *)&msg.register_number);
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);
