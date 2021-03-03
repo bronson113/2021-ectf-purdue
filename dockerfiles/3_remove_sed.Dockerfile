@@ -4,6 +4,12 @@
 #
 # (c) 2021 The MITRE Corporation
 
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# run remove_secrets.py to update the registration number list
+#
+
 # load current SSS container to modify
 # NOTE: only sss/ and its subdirectories in the repo are accessible to this Dockerfile as .
 ARG DEPLOYMENT

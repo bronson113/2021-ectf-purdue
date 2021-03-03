@@ -10,6 +10,19 @@
 # This code is being provided only for educational purposes for the 2021 MITRE eCTF competition,
 # and may not meet MITRE standards for quality. Use this code at your own risk!
 
+
+
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# The changes are made as follow:
+# 1. redefined the registration packet structure to [dev_op - reg_num - key]
+# 2. add check to the device id to ensure that the registering device is in the deployment range
+# 3. vaildate the device by checking if the provided registration number match the recorded number
+#    a. each device with be given a randomly generated number upon the add_sed action
+# 4. the response packet now includes a randomly generated key for furture transmission
+#
+
 import socket
 import select
 import struct
@@ -58,6 +71,7 @@ class SSS:
         logging.debug('handling transaction')
         data = b''
         reg_packet_len = 32 #need to match controller.c/.h 's definition
+
         while len(data) < reg_packet_len:
             recvd = csock.recv(reg_packet_len - len(data))
             data += recvd
@@ -65,15 +79,15 @@ class SSS:
             # check for closed connection
             if not recvd:
                 raise ConnectionResetError
+
         logging.debug(f'Received buffer: {repr(data)}')
 #        _, _, _, _, dev_id, op = struct.unpack('<HHHHHH', data)
         _, _, _, _, dev_id, op, reg_num, _ = struct.unpack('<HHHHHHL16s', data)
 
-#TODO: check reg_num, need to make a list of vaild reg_num when making a deployment
-#      then check if the given number is within the allowed list
 
         valid = True
         
+        #load all registration number from file
         numlist = open('/secrets/reg_num_list','r').read()
         numlist = [list(map(int,i.split(','))) for i in numlist.split('|')[1:]]
 
@@ -81,10 +95,12 @@ class SSS:
         for i in numlist:
             reg_nums[i[0]] = i[1]
 
+        #check if the registering device is in the vaild range
         if int(dev_id) < self.start_id or int(dev_id) >= self.end_id:
             logging.info(f'{dev_id}:invaild sed')
             valid = False
 
+        #check if the registration number match with the recorded number
         elif reg_num != reg_nums.get(dev_id):
             logging.info(f'{dev_id}:invaild sed')
             valid = False
@@ -103,8 +119,10 @@ class SSS:
         # send response
         if valid:
             resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, KEY)
+            
         else:
-            resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4, dev_id, resp_op, 0, b'a'*16)
+            #send fake key if the registration isn't vaild
+            resp = struct.pack('<2sHHHHhL16s', b'SC', dev_id, SSS_ID, 4+4+16, dev_id, resp_op, 0, b'\x00'*16)
 
         logging.debug(f'Sending response {repr(data)}')
         csock.send(resp)

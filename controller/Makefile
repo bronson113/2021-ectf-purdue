@@ -8,6 +8,11 @@
 # This code is being provided only for educational purposes for the 2021 MITRE eCTF competition,
 # and may not meet MITRE standards for quality. Use this code at your own risk!
 
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# Add the secret.o to the make file in order to include the secret registration number
+#
 
 # define the part type and base directory - must be defined for makedefs to work
 PART=LM3S6965
@@ -84,7 +89,7 @@ arg_check:
 
 ${COMPILER}/controller.axf: arg_check
 ${COMPILER}/controller.axf: ${COMPILER}/controller.o
-${COMPILER}/controller.axf: ${COMPILER}/secret.o
+${COMPILER}/controller.axf: ${COMPILER}/secret.o                 #<- the secret.o is added here!
 ${COMPILER}/controller.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/controller.axf: ${COMPILER}/system_lm3s.o
 ifeq (${COMPILER}, gcc)

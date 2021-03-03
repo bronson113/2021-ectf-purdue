@@ -10,6 +10,14 @@
  * and may not meet MITRE standards for quality. Use this code at your own risk!
  */
 
+/*
+ * 2021 Purdue Team note:
+ * Bronson Yen
+ * 
+ * This file is changed to add the scewl_sss_msg_full structure to fit the new packet structure
+ *
+ */
+
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 

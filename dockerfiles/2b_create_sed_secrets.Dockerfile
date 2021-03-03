@@ -4,6 +4,12 @@
 #
 # (c) 2021 The MITRE Corporation
 
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# this file calls the create_secrets.py which creates the $(scewl_id).secret file for each sed added
+#
+
 # load current SSS container to modify
 ARG DEPLOYMENT
 FROM ${DEPLOYMENT}/sss
@@ -16,5 +22,5 @@ ARG SCEWL_ID
 
 # do here whatever you need here to create secrets for the new SED that the SSS needs access to
 
-RUN touch /secrets/${SCEWL_ID}.secret
+RUN touch /secrets/${SCEWL_ID}.secret  
 RUN python3 /secrets/create_secrets.py ${SCEWL_ID}

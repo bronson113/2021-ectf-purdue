@@ -10,6 +10,18 @@
  * and may not meet MITRE standards for quality. Use this code at your own risk!
  */
 
+
+/*
+ * 2021 Purdue Team note:
+ * Bronson Yen
+ * 
+ * The changes are made as follow:
+ * 1. changed the registration process to include the exchange of AES key
+ * 2. initialize the AES context upon registering 
+ * 3. add AES encryption and decrytion for all transmission except the FAA commands
+ *
+ */
+
 #include "controller.h"
 #include "secret.h"
 
@@ -108,6 +120,7 @@ int send_msg(intf_t *intf, scewl_id_t src_id, scewl_id_t tgt_id, uint16_t len, c
 }
 
 
+// handle AES encryption and decryption when recieveing broadcast and direct messages
 int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
   for(int i=0;i<len;i+=16){
     AES_ECB_decrypt(&ctx, data+i);		
@@ -117,8 +130,6 @@ int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
 
 
 int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) { 
-//  send_str("encryption key used:");
-//  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 16, (char *)key);
   for(int i=0;i<len;i+=16){
     AES_ECB_encrypt(&ctx, data+i);		
   }
@@ -169,14 +180,12 @@ int handle_registration(char* msg) {
 int sss_register() {
   scewl_sss_msg_full msg;
   scewl_id_t src_id, tgt_id;
-  int status, len;
+  int status;
 
-  // fill registration message
+  // setup the registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_REG;
-//  msg.register_number = 0xdeadbeef;
   msg.register_number = get_reg_num();
-//  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, 8, (char *)&msg.register_number);
   
   // send registration
   status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);
@@ -185,12 +194,14 @@ int sss_register() {
   }
 
   // receive response
-  len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_full), 1);
+  read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_full), 1);
 
+  // retrive the key from the response message
   for(int i=0;i<16;i++){
 	  key[i]=*((char *)&msg.key1+i);
   } 
 
+  // initialize the AES context
   AES_init_ctx(&ctx, key);
 
   // notify CPU of response
@@ -216,18 +227,23 @@ int sss_deregister() {
   // fill registration message
   msg.dev_id = SCEWL_ID;
   msg.op = SCEWL_SSS_DEREG;
+  msg.register_number = get_reg_num();
   
   // send registration
-  status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(msg), (char *)&msg);
+  status = send_msg(SSS_INTF, SCEWL_ID, SCEWL_SSS_ID, sizeof(scewl_sss_msg_full), (char *)&msg);
   if (status == SCEWL_ERR) {
     return 0;
   }
 
   // receive response
-  len = read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_t), 1);
+  read_msg(SSS_INTF, (char *)&msg, &src_id, &tgt_id, sizeof(scewl_sss_msg_full), 1);
 
   // notify CPU of response
-  status = send_msg(CPU_INTF, src_id, tgt_id, len, (char *)&msg);
+  scewl_sss_msg_t cpu_msg;
+  cpu_msg.dev_id = msg.dev_id;
+  cpu_msg.op = msg.op;
+
+  status = send_msg(CPU_INTF, src_id, tgt_id, sizeof(cpu_msg), (char *)&cpu_msg);
   if (status == SCEWL_ERR) {
     return 0;
   }

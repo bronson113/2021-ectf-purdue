@@ -4,6 +4,12 @@
 #
 # (c) 2021 The MITRE Corporation
 
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# changes: added the copy process for the sed to retrieve the secret.c file
+#
+
 ARG DEPLOYMENT
 
 ###################################################################
@@ -26,6 +32,7 @@ ARG SCEWL_ID
 ###################################################################
 # Copy files from the SSS container                               #
 #                                                                 #
+# Copy the secret file to sed
 COPY --from=sss /secrets/${SCEWL_ID}.secret /sed/secret.c     
 #                                                                 #
 ###################################################################

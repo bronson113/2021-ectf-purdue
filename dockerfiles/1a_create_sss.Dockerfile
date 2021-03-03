@@ -4,6 +4,12 @@
 #
 # (c) 2021 The MITRE Corporation
 
+# 2021 Purdue Team note:
+# Bronson Yen
+#
+# Added create_secrets.py and remove_secrets.py to the sss docker for future uses
+#
+
 FROM ubuntu:focal
 
 # Add environment customizations here
