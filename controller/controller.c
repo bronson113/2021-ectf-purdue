@@ -220,7 +220,7 @@ int sss_register() {
 
 
 int sss_deregister() {
-  scewl_sss_msg_t msg;
+  scewl_sss_msg_full msg;
   scewl_id_t src_id, tgt_id;
   int status, len;
 
