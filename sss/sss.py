@@ -17,10 +17,9 @@
 #
 # The changes are made as follow:
 # 1. redefined the registration packet structure to [dev_op - reg_num - key]
-# 2. add check to the device id to ensure that the registering device is in the deployment range
-# 3. vaildate the device by checking if the provided registration number match the recorded number
+# 2. vaildate the device by checking if the provided registration number match the recorded number
 #    a. each device with be given a randomly generated number upon the add_sed action
-# 4. the response packet now includes a randomly generated key for furture transmission
+# 3. the response packet now includes a randomly generated key for furture transmission
 #
 
 import socket
