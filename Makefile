@@ -89,7 +89,7 @@ launch_radio_d: launch_radio
 launch_sss:
 	$(call check_defined, DEPLOYMENT SOCK_ROOT)
 	docker run $(DOCKOPT) -v $(SOCK_ROOT):/socks $(DEPLOYMENT)/sss \
-		/sss /socks/sss.sock $(START_ID) $(END_ID)
+		/sss /socks/sss.sock
 
 # launch the SSS detatched
 launch_sss_d: DOCKOPT=-d

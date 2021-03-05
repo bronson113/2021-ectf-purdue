@@ -47,7 +47,7 @@ Device = NamedTuple('Device', [('id', int), ('status', int), ('csock', socket.so
 KEY = os.urandom(16)
 
 class SSS:
-    def __init__(self, sockf, start_id, end_id):
+    def __init__(self, sockf):
         # Make sure the socket does not already exist
         try:
             os.unlink(sockf)
@@ -59,8 +59,6 @@ class SSS:
         self.sock.bind(sockf)
         self.sock.listen(10)
         self.devs = {}
-        self.start_id = int(start_id)
-        self.end_id = int(end_id)
     
     @staticmethod
     def sock_ready(sock, op='r'):
@@ -95,19 +93,14 @@ class SSS:
         for i in numlist:
             reg_nums[i[0]] = i[1]
 
-        #check if the registering device is in the vaild range
-        if int(dev_id) < self.start_id or int(dev_id) >= self.end_id:
-            logging.info(f'{dev_id}:invaild sed')
-            valid = False
-
         #check if the registration number match with the recorded number
-        elif reg_num != reg_nums.get(dev_id):
+        if reg_num != reg_nums.get(dev_id):
             logging.info(f'{dev_id}:invaild sed')
             valid = False
 
 
         # requesting repeat transaction
-        elif dev_id in self.devs and self.devs[dev_id] == op:
+        elif dev_id in self.devs and self.devs[dev_id].status == op:
             resp_op = ALREADY
             logging.info(f'{dev_id}:already {"Registered" if op == REG else "Deregistered"}')
         # record transaction
@@ -170,16 +163,13 @@ class SSS:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('sockf', help='Path to socket to bind the SSS to')
-    parser.add_argument('start_id', help='The start of the SCEWL_ID range')
-    parser.add_argument('end_id', help='The end of the SCEWL_ID range')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     # map of SCEWL IDs to statuses
-    sss = SSS(args.sockf, args.start_id, args.end_id)
-
+    sss = SSS(args.sockf)
     sss.start()
 
 
