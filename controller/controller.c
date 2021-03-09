@@ -160,8 +160,6 @@ int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
     hash*=*((uint8_t *)(data+i+3));
   }
   if(h!=hash) return SCEWL_ERR;
-  send_str("Example decrypted message:");
-  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, rlen, (char *)data);
 
   return send_msg(CPU_INTF, src_id, SCEWL_ID, rlen, data);
 }
@@ -198,20 +196,72 @@ int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) {
   return send_msg(RAD_INTF, SCEWL_ID, tgt_id, aligned+16, data);
 }
 
-
 int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
+  uint16_t rlen;
+  uint32_t rt,rv,h;
+  int found = -1;
   for(int i=0;i<len;i+=16){
-    AES_ECB_decrypt(&ctx, (uint8_t *)data+i);		
+    AES_ECB_decrypt(&ctx,(uint8_t *)data+i);		
   }
-  return send_msg(CPU_INTF, src_id, SCEWL_BRDCST_ID, len, data);
+
+  h = *(uint32_t *)((uint8_t *)(data+len-4));
+  rv = *(uint32_t *)((uint8_t *)(data+len-8));
+  rlen = *(uint16_t *)((uint8_t *)(data+len-12));
+  rt = *(uint32_t *)((uint8_t *)(data+len-16));
+  for(int i=0;i<0x100;i++){
+  	if(timings[i][0]==src_id){
+		if(rt<=timings[i][1])return SCEWL_ERR;
+		timings[i][1]=rt;
+	}
+	if(timings[i][0]==0){found = i;break;}
+  }
+  if(found!=-1){
+	timings[found][0]=src_id;
+	timings[found][1]=rt;
+  }
+  if(rv!=0xdeadbeef)return SCEWL_ERR; 
+
+  uint32_t hash = 0;
+  for(int i=0;i<len-16;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+  if(h!=hash) return SCEWL_ERR;
+  
+  return send_msg(CPU_INTF, src_id, SCEWL_BRDCST_ID, rlen, data);
 }
 
-
 int handle_brdcst_send(char *data, uint16_t len) {
-  for(int i=0;i<len;i+=16){
+  uint16_t aligned = (len+15) - ((len+15)%16);
+  for(int i=0;i<aligned-len;i++){
+    *(uint8_t*)(data+len+i) = 0;
+  }
+
+  for(int i=0;i<16;i++){
+    *(uint8_t*)(data+i+aligned) = 0;
+  }
+
+  uint32_t hash = 0;
+  for(int i=0;i<aligned;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+
+  t+=1;
+  *(uint32_t *)((uint8_t *)(data+aligned)) = t;
+  *(uint32_t *)((uint8_t *)(data+aligned+4)) = len;
+  *(uint32_t *)((uint8_t *)(data+aligned+8)) = 0xdeadbeef;
+  *(uint32_t *)((uint8_t *)(data+aligned+12)) = hash;
+
+  for(int i=0;i<aligned+16;i+=16){
     AES_ECB_encrypt(&ctx, (uint8_t *)data+i);		
   }
-  return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, (len+15)-((len+15)%16), data);
+  
+  return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, aligned+16, data);
 }   
 
 
