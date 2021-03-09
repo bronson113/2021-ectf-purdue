@@ -9,5 +9,8 @@
 * add AES encryption to both broadcast and direct messages
 > relavent detail can be found in the controller.c file
 
+* add additional flags to the packets to prevent replay and modifying attacks
+> relavent detail can be found in the controller.c file
+
 
 

@@ -77,7 +77,6 @@ int main(void) {
   }
 
   fprintf(log, "Sending hello...\n");
-  scewl_send(TGT_ID, 0x13, "hello there!");
   scewl_send(TGT_ID, 0x1001, msg);
 
   // receive response (block until response received)

@@ -19,6 +19,9 @@
  * 1. changed the registration process to include the exchange of AES key
  * 2. initialize the AES context upon registering 
  * 3. add AES encryption and decrytion for all transmission except the FAA commands
+ * 4. add hash to the message to prevent other's from modifying the message
+ * 5. add timing flag to packet to prevent replay attack
+ *
  *
  */
 
@@ -39,13 +42,14 @@ char int2char(uint8_t i) {
 #define BLOCK_SIZE 16
 
 // message buffer
-char buf[SCEWL_MAX_DATA_SZ];
+char buf[SCEWL_MAX_DATA_SZ+0x40];
 struct AES_ctx ctx;
 
 // key buffer
 uint8_t key[16];
 int registered = 0;
-
+int timings[0x100][2];
+int t;
 
 int read_msg(intf_t *intf, char *data, scewl_id_t *src_id, scewl_id_t *tgt_id,
              size_t n, int blocking) {
@@ -124,24 +128,80 @@ int send_msg(intf_t *intf, scewl_id_t src_id, scewl_id_t tgt_id, uint16_t len, c
 
 // handle AES encryption and decryption when recieveing broadcast and direct messages
 int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
+  uint16_t rlen;
+  uint32_t rt,rv,h;
+  int found = -1;
   for(int i=0;i<len;i+=16){
-    AES_ECB_decrypt(&ctx, data+i);		
+    AES_ECB_decrypt(&ctx,(uint8_t *)data+i);		
   }
-  return send_msg(CPU_INTF, src_id, SCEWL_ID, len, data);
+
+  h = *(uint32_t *)((uint8_t *)(data+len-4));
+  rv = *(uint32_t *)((uint8_t *)(data+len-8));
+  rlen = *(uint16_t *)((uint8_t *)(data+len-12));
+  rt = *(uint32_t *)((uint8_t *)(data+len-16));
+  for(int i=0;i<0x100;i++){
+  	if(timings[i][0]==src_id){
+		if(rt<=timings[i][1])return SCEWL_ERR;
+		timings[i][1]=rt;
+	}
+	if(timings[i][0]==0){found = i;break;}
+  }
+  if(found!=-1){
+	timings[found][0]=src_id;
+	timings[found][1]=rt;
+  }
+  if(rv!=0xdeadbeef)return SCEWL_ERR; 
+
+  uint32_t hash = 0;
+  for(int i=0;i<len-16;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+  if(h!=hash) return SCEWL_ERR;
+  send_str("Example decrypted message:");
+  send_msg(RAD_INTF, SCEWL_ID, SCEWL_FAA_ID, rlen, (char *)data);
+
+  return send_msg(CPU_INTF, src_id, SCEWL_ID, rlen, data);
 }
 
 
-int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) { 
-  for(int i=0;i<len;i+=16){
-    AES_ECB_encrypt(&ctx, data+i);		
+int handle_scewl_send(char* data, scewl_id_t tgt_id, uint16_t len) {  
+  uint16_t aligned = (len+15) - ((len+15)%16);
+  for(int i=0;i<aligned-len;i++){
+    *(uint8_t*)(data+len+i) = 0;
   }
-  return send_msg(RAD_INTF, SCEWL_ID, tgt_id, (len+15)-((len+15)%16), data);
+
+  for(int i=0;i<16;i++){
+    *(uint8_t*)(data+i+aligned) = 0;
+  }
+
+  uint32_t hash = 0;
+  for(int i=0;i<aligned;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+
+  t+=1;
+  *(uint32_t *)((uint8_t *)(data+aligned)) = t;
+  *(uint32_t *)((uint8_t *)(data+aligned+4)) = len;
+  *(uint32_t *)((uint8_t *)(data+aligned+8)) = 0xdeadbeef;
+  *(uint32_t *)((uint8_t *)(data+aligned+12)) = hash;
+
+  for(int i=0;i<aligned+16;i+=16){
+    AES_ECB_encrypt(&ctx, (uint8_t *)data+i);		
+  }
+  
+  return send_msg(RAD_INTF, SCEWL_ID, tgt_id, aligned+16, data);
 }
 
 
 int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
   for(int i=0;i<len;i+=16){
-    AES_ECB_decrypt(&ctx, data+i);		
+    AES_ECB_decrypt(&ctx, (uint8_t *)data+i);		
   }
   return send_msg(CPU_INTF, src_id, SCEWL_BRDCST_ID, len, data);
 }
@@ -149,7 +209,7 @@ int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
 
 int handle_brdcst_send(char *data, uint16_t len) {
   for(int i=0;i<len;i+=16){
-    AES_ECB_encrypt(&ctx, data+i);		
+    AES_ECB_encrypt(&ctx, (uint8_t *)data+i);		
   }
   return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, (len+15)-((len+15)%16), data);
 }   
@@ -220,7 +280,7 @@ int sss_register() {
 int sss_deregister() {
   scewl_sss_msg_full msg;
   scewl_id_t src_id, tgt_id;
-  int status, len;
+  int status;
 
   // fill registration message
   msg.dev_id = SCEWL_ID;
@@ -259,6 +319,14 @@ int main() {
   intf_init(CPU_INTF);
   intf_init(SSS_INTF);
   intf_init(RAD_INTF);
+
+
+  //initialize interal memory
+  t = 0;
+  for(int i=0;i<0x100;i++){
+	  timings[i][0]=0;
+	  timings[i][1]=0;
+  }
 
 #ifdef EXAMPLE_AES
   // example encryption using tiny-AES-c

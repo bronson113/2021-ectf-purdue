@@ -67,7 +67,7 @@ typedef struct scewl_sss_msg_full{
 } scewl_sss_msg_full;
 
 // SCEWL status codes
-enum scewl_status { SCEWL_ERR = -1, SCEWL_OK, SCEWL_ALREADY, SCEWL_NO_MSG };
+enum scewl_status { SCEWL_NO_MSG = -2, SCEWL_ERR, SCEWL_OK, SCEWL_ALREADY};
 
 // registration/deregistration options
 enum scewl_sss_op_t { SCEWL_SSS_ALREADY = -1, SCEWL_SSS_REG, SCEWL_SSS_DEREG };
