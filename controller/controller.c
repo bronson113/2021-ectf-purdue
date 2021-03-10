@@ -139,6 +139,16 @@ int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
   rv = *(uint32_t *)((uint8_t *)(data+len-8));
   rlen = *(uint16_t *)((uint8_t *)(data+len-12));
   rt = *(uint32_t *)((uint8_t *)(data+len-16));
+
+  uint32_t hash = 0;
+  for(int i=0;i<len-16;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+  if(h!=hash) return SCEWL_ERR;
+
   for(int i=0;i<0x100;i++){
   	if(timings[i][0]==src_id){
 		if(rt<=timings[i][1])return SCEWL_ERR;
@@ -151,15 +161,6 @@ int handle_scewl_recv(char* data, scewl_id_t src_id, uint16_t len) {
 	timings[found][1]=rt;
   }
   if(rv!=0xdeadbeef)return SCEWL_ERR; 
-
-  uint32_t hash = 0;
-  for(int i=0;i<len-16;i+=4){
-    hash+=*((uint8_t *)(data+i));
-    hash^=*((uint8_t *)(data+i+1));
-    hash-=*((uint8_t *)(data+i+2));
-    hash*=*((uint8_t *)(data+i+3));
-  }
-  if(h!=hash) return SCEWL_ERR;
 
   return send_msg(CPU_INTF, src_id, SCEWL_ID, rlen, data);
 }
@@ -208,6 +209,16 @@ int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
   rv = *(uint32_t *)((uint8_t *)(data+len-8));
   rlen = *(uint16_t *)((uint8_t *)(data+len-12));
   rt = *(uint32_t *)((uint8_t *)(data+len-16));
+
+  uint32_t hash = 0;
+  for(int i=0;i<len-16;i+=4){
+    hash+=*((uint8_t *)(data+i));
+    hash^=*((uint8_t *)(data+i+1));
+    hash-=*((uint8_t *)(data+i+2));
+    hash*=*((uint8_t *)(data+i+3));
+  }
+  if(h!=hash) return SCEWL_ERR;
+
   for(int i=0;i<0x100;i++){
   	if(timings[i][0]==src_id){
 		if(rt<=timings[i][1])return SCEWL_ERR;
@@ -220,15 +231,6 @@ int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len) {
 	timings[found][1]=rt;
   }
   if(rv!=0xdeadbeef)return SCEWL_ERR; 
-
-  uint32_t hash = 0;
-  for(int i=0;i<len-16;i+=4){
-    hash+=*((uint8_t *)(data+i));
-    hash^=*((uint8_t *)(data+i+1));
-    hash-=*((uint8_t *)(data+i+2));
-    hash*=*((uint8_t *)(data+i+3));
-  }
-  if(h!=hash) return SCEWL_ERR;
   
   return send_msg(CPU_INTF, src_id, SCEWL_BRDCST_ID, rlen, data);
 }
