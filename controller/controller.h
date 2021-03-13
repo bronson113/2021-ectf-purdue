@@ -134,6 +134,13 @@ int handle_brdcst_recv(char* data, scewl_id_t src_id, uint16_t len);
 int handle_brdcst_send(char *data, uint16_t len);
 
 /*
+ * handle_faa_brdcst
+ *
+ * Receives brdcast with the faa format
+ */
+int handle_faa_brdcst(char* data, uint16_t len);
+
+/*
  * handle_faa_recv
  * 
  * Receives an FAA message from the antenna and passes it to the CPU

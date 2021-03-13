@@ -266,6 +266,9 @@ int handle_brdcst_send(char *data, uint16_t len) {
   return send_msg(RAD_INTF, SCEWL_ID, SCEWL_BRDCST_ID, aligned+16, data);
 }   
 
+int handle_faa_brdcst(char* data, uint16_t len) {
+  return send_msg(CPU_INTF, SCEWL_FAA_ID, SCEWL_BRDCST_ID, len, data);
+}
 
 int handle_faa_recv(char* data, uint16_t len) {
   return send_msg(CPU_INTF, SCEWL_FAA_ID, SCEWL_ID, len, data);
@@ -446,8 +449,13 @@ int main() {
         if (src_id != SCEWL_ID) { // ignore our own outgoing messages
           if (tgt_id == SCEWL_BRDCST_ID) {
             // receive broadcast message
-            handle_brdcst_recv(buf, src_id, len);
-          } else if (tgt_id == SCEWL_ID) {
+			// check if the brdcast use the faa format or not
+			if(src_id == SCEWL_FAA_ID){
+				handle_faa_brdcst(buf, len);
+			}else{
+				handle_brdcst_recv(buf, src_id, len);
+            }
+        } else if (tgt_id == SCEWL_ID) {
             // receive unicast message
             if (src_id == SCEWL_FAA_ID) {
               handle_faa_recv(buf, len);
